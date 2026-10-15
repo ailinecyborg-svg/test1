@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тест</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #e9eef2; --card: #ffffff; --ink: #14213d; --muted: #5b6678;
+    --line: #c9d3dc; --accent: #d62839; --accent-ink: #ffffff; --bar: #d9e1e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101826; --card: #19243a; --ink: #eef2f7; --muted: #9aa7ba;
+      --line: #2c3a55; --accent: #ef4b5b; --accent-ink: #101826; --bar: #26334d;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 17px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  }
+  main { max-width: 520px; margin: 0 auto; }
+  h1, h2 { font-family: Georgia, "Times New Roman", serif; line-height: 1.2; margin: 0 0 12px; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 24px; }
+  p { margin: 0 0 16px; }
+  .muted { color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .progress { height: 6px; background: var(--bar); border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+  .progress > div { height: 100%; background: var(--accent); transition: width .25s; }
+  button, .link-btn {
+    display: block; width: 100%; text-align: left; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; margin-top: 10px; cursor: pointer; text-decoration: none;
+  }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible, .link-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); text-align: center; font-weight: 600; }
+  .primary:hover { opacity: .9; }
+  .center { text-align: center; }
+  .emoji { font-size: 56px; line-height: 1; margin-bottom: 8px; }
+  .percent { font-family: Georgia, serif; font-size: 44px; color: var(--accent); margin: 4px 0; }
+  #banner { margin-top: 20px; min-height: 60px; border: 1px dashed var(--line); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; }
+  .hidden { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { .progress > div { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <div id="app"></div>
+  <div id="banner" class="hidden">Здесь будет рекламный баннер</div>
+</main>
+
+<script>
+/* =====================================================================
+   ВСЁ, ЧТО НУЖНО МЕНЯТЬ, НАХОДИТСЯ В ЭТОМ БЛОКЕ. Остальной код трогать не надо.
+   ===================================================================== */
+const QUIZ = {
+  title: "Какой ты гражданин Республики Абсурдистан?",
+  subtitle: "5 вопросов. Ответь честно, система всё равно узнает правду.",
+  startButton: "Начать тест",
+
+  // Ссылка на твой канал (кнопка в конце теста)
+  channelUrl: "https://t.me/your_channel",
+  channelButton: "Подписаться на канал",
+
+  // Ссылка на твою мини-аппку, ее вставляют в «Поделиться».
+  // Пока приложения нет, можно оставить ссылку на канал.
+  shareUrl: "https://t.me/your_channel",
+  shareText: "Я прошёл тест. Попробуй и ты:",
+
+  // Вопросы. points: сколько очков даёт ответ (любые числа от 0 и выше).
+  questions: [
+    {
+      text: "В магазине закончился хлеб. Твои действия?",
+      answers: [
+        { text: "Скажу, что это временные трудности", points: 0 },
+        { text: "Куплю другой хлеб и промолчу", points: 1 },
+        { text: "Напишу жалобу и получу ответ про «рост выпечки»", points: 2 },
+        { text: "Испеку сам и открою пекарню", points: 3 }
+      ]
+    },
+    {
+      text: "Телевизор сообщает, что всё отлично. Ты...",
+      answers: [
+        { text: "Верю, он же телевизор", points: 0 },
+        { text: "Выключаю звук", points: 1 },
+        { text: "Сверяю с ценами в магазине", points: 2 },
+        { text: "Делаю из этого мем", points: 3 }
+      ]
+    },
+    {
+      text: "Тебе предлагают подписать письмо в поддержку. Не читая.",
+      answers: [
+        { text: "Подпишу, чтобы не спорить", points: 0 },
+        { text: "Скажу, что подумаю", points: 1 },
+        { text: "Прочитаю и задам вопросы", points: 2 },
+        { text: "Найду, кто его написал, и спрошу у него", points: 3 }
+      ]
+    },
+    {
+      text: "Как ты относишься к слову «стабильность»?",
+      answers: [
+        { text: "Это когда ничего не меняется", points: 0 },
+        { text: "Это когда ничего не меняется, и это хорошо", points: 1 },
+        { text: "Это когда ничего не меняется, и это подозрительно", points: 2 },
+        { text: "Это когда ничего не меняется, кроме цен", points: 3 }
+      ]
+    },
+    {
+      text: "Последний вопрос. Ты доволен жизнью?",
+      answers: [
+        { text: "Да, определённо", points: 0 },
+        { text: "В целом да", points: 1 },
+        { text: "Смотря с чем сравнивать", points: 2 },
+        { text: "Отвечу после разговора с адвокатом", points: 3 }
+      ]
+    }
+  ],
+
+  // Результаты. minPercent: с какого процента от максимума очков этот результат.
+  // Первый должен иметь minPercent: 0. Порядок не важен.
+  // link: партнёрская ссылка под результатом. Если не нужна, удали строку link.
+  results: [
+    {
+      minPercent: 0, emoji: "😇", title: "Образцовый гражданин",
+      text: "Ты веришь всему, что говорят по телевизору, и даже ему не надоел. Система тобой гордится.",
+      link: { text: "Книга «Как не потерять веру»", url: "https://example.com/partner-link-1" }
+    },
+    {
+      minPercent: 40, emoji: "🤨", title: "Осторожный скептик",
+      text: "Ты всё замечаешь, но пока молчишь. Это называется «накапливать материал».",
+      link: { text: "Что почитать скептику", url: "https://example.com/partner-link-2" }
+    },
+    {
+      minPercent: 75, emoji: "😈", title: "Профессиональный сатирик",
+      text: "Тебя пора брать в штат. Или в список наблюдения. Тут как повезёт.",
+      link: { text: "Инструменты для сатирика", url: "https://example.com/partner-link-3" }
+    }
+  ]
+};
+
+/* ---------------- Реклама (пока заглушки) ----------------
+   banner: true покажет серый блок под тестом. Код баннера от рекламной сети
+   вставь внутрь элемента #banner (см. функцию mountBanner).
+   rewardedAd: true включает «посмотри рекламу, чтобы увидеть результат». */
+const ADS = { banner: true, rewardedAd: true, fakeAdSeconds: 3 };
+
+function mountBanner(container) {
+  // ВСТАВЬ СЮДА код баннера своей рекламной сети (для Telegram Mini Apps).
+  // Пока там просто серая заглушка из HTML выше.
+}
+
+function showRewardedAd(onDone) {
+  // ЗАМЕНИ ЭТУ ФУНКЦИЮ вызовом SDK рекламной сети, когда подключишь её.
+  // Когда реклама досмотрена, нужно вызвать onDone().
+  // Сейчас просто имитируем: обратный отсчёт и показ результата.
+  const app = document.getElementById("app");
+  let left = ADS.fakeAdSeconds;
+  app.replaceChildren(
+    el("div", { class: "card center" }, [
+      el("h2", {}, "Здесь будет видеореклама"),
+      el("p", { class: "muted" }, "Результат появится через " + left + " сек.")
+    ])
+  );
+  const timer = setInterval(() => {
+    left--;
+    if (left <= 0) { clearInterval(timer); onDone(); return; }
+    app.querySelector("p").textContent = "Результат появится через " + left + " сек.";
+  }, 1000);
+}
+
+/* =====================================================================
+   ДАЛЬШЕ ЛОГИКА. Если не уверен, лучше не трогай.
+   ===================================================================== */
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { tg.ready(); tg.expand(); }
+
+const app = document.getElementById("app");
+const state = { index: 0, score: 0 };
+const maxScore = QUIZ.questions.reduce(
+  (sum, q) => sum + Math.max(...q.answers.map(a => a.points)), 0
+);
+
+document.title = QUIZ.title;
+if (ADS.banner) {
+  const b = document.getElementById("banner");
+  b.classList.remove("hidden");
+  mountBanner(b);
+}
+
+function el(tag, attrs, children) {
+  const node = document.createElement(tag);
+  for (const k in (attrs || {})) {
+    if (k === "onclick") node.addEventListener("click", attrs[k]);
+    else node.setAttribute(k, attrs[k]);
+  }
+  if (typeof children === "string") node.textContent = children;
+  else (children || []).forEach(c => node.appendChild(c));
+  return node;
+}
+
+function showStart() {
+  state.index = 0; state.score = 0;
+  app.replaceChildren(
+    el("div", { class: "card" }, [
+      el("h1", {}, QUIZ.title),
+      el("p", { class: "muted" }, QUIZ.subtitle),
+      el("button", { class: "primary", onclick: showQuestion }, QUIZ.startButton)
+    ])
+  );
+}
+
+function showQuestion() {
+  const q = QUIZ.questions[state.index];
+  const total = QUIZ.questions.length;
+  const answers = q.answers.map(a =>
+    el("button", { onclick: () => answer(a.points) }, a.text)
+  );
+  app.replaceChildren(
+    el("div", { class: "progress" }, [
+      el("div", { style: "width:" + (state.index / total * 100) + "%" })
+    ]),
+    el("div", { class: "card" }, [
+      el("p", { class: "muted" }, "Вопрос " + (state.index + 1) + " из " + total),
+      el("h2", {}, q.text),
+      ...answers
+    ])
+  );
+}
+
+function answer(points) {
+  state.score += points;
+  state.index++;
+  if (state.index < QUIZ.questions.length) { showQuestion(); return; }
+  if (ADS.rewardedAd) showRewardedAd(showResult); else showResult();
+}
+
+function pickResult(percent) {
+  const sorted = [...QUIZ.results].sort((a, b) => a.minPercent - b.minPercent);
+  let found = sorted[0];
+  for (const r of sorted) if (percent >= r.minPercent) found = r;
+  return found;
+}
+
+function showResult() {
+  const percent = maxScore ? Math.round(state.score / maxScore * 100) : 0;
+  const r = pickResult(percent);
+  const card = [
+    el("div", { class: "emoji" }, r.emoji || ""),
+    el("h2", {}, r.title),
+    el("div", { class: "percent" }, percent + "%"),
+    el("p", {}, r.text)
+  ];
+  if (r.link) {
+    card.push(el("a", { class: "link-btn", href: r.link.url, target: "_blank", rel: "noopener sponsored" }, r.link.text));
+  }
+  card.push(el("button", { class: "primary", onclick: () => share(r, percent) }, "Поделиться результатом"));
+  card.push(el("a", { class: "link-btn center", href: QUIZ.channelUrl, target: "_blank", rel: "noopener" }, QUIZ.channelButton));
+  card.push(el("button", { class: "center", onclick: showStart }, "Пройти ещё раз"));
+  app.replaceChildren(el("div", { class: "card center" }, card));
+}
+
+function share(result, percent) {
+  const text = QUIZ.shareText + " мой результат: «" + result.title + "» (" + percent + "%)";
+  if (tg) {
+    tg.openTelegramLink("https://t.me/share/url?url=" + encodeURIComponent(QUIZ.shareUrl) +
+                        "&text=" + encodeURIComponent(text));
+  } else if (navigator.share) {
+    navigator.share({ text: text, url: QUIZ.shareUrl }).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text + " " + QUIZ.shareUrl).then(() => alert("Текст скопирован"));
+  }
+}
+
+showStart();
+</script>
+</body>
+</html>
